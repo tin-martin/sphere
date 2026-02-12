@@ -1,0 +1,342 @@
+:root {
+  --bg0: #02030a;
+  --bg1: #05081a;
+  --panel: rgba(8, 12, 28, 0.72);
+  --line: rgba(124, 168, 255, 0.22);
+  --ink: #eef3ff;
+  --muted: #8ea0cc;
+  --accent: #7b8cff;
+  --accent2: #6dffe0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+  font-family: "Space Grotesk", "Avenir Next", "Segoe UI", sans-serif;
+  background:
+    radial-gradient(1200px 720px at 10% -20%, #101b47 0%, transparent 56%),
+    radial-gradient(1000px 700px at 100% 0%, #042940 0%, transparent 58%),
+    linear-gradient(160deg, var(--bg0), var(--bg1));
+  color: var(--ink);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(18, 26, 52, 0.72);
+  color: var(--ink);
+  padding: 8px 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+}
+
+button.primary {
+  background: linear-gradient(120deg, var(--accent), var(--accent2));
+  color: #041223;
+  border-color: transparent;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  backdrop-filter: blur(8px);
+}
+
+.meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.error {
+  margin: 0;
+  color: #ff9ca8;
+  font-size: 12px;
+}
+
+.futuristFrame {
+  min-height: 100vh;
+  padding: 14px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 12px;
+}
+
+.minimalTop {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.minimalTop h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.controlRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.sphereStage {
+  position: relative;
+  overflow: hidden;
+  min-height: 74vh;
+  background:
+    radial-gradient(900px 600px at 50% 40%, rgba(27, 54, 128, 0.25), transparent 62%),
+    linear-gradient(180deg, rgba(3, 7, 20, 0.86), rgba(3, 7, 20, 0.92));
+}
+
+.emptyState {
+  padding: 26px;
+}
+
+.hudBlock {
+  position: absolute;
+  z-index: 12;
+  width: min(340px, calc(100% - 24px));
+  border: 1px solid rgba(129, 171, 255, 0.26);
+  border-radius: 14px;
+  background: rgba(7, 12, 29, 0.7);
+  backdrop-filter: blur(8px);
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.hudLeft {
+  left: 12px;
+  top: 12px;
+}
+
+.hudRight {
+  right: 12px;
+  top: 12px;
+}
+
+.hudValue {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.progressWrap {
+  margin-top: 2px;
+}
+
+.progressMeta {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 11px;
+  margin-bottom: 5px;
+}
+
+.progressTrack {
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(67, 86, 137, 0.38);
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+}
+
+.errorFill {
+  background: linear-gradient(90deg, #ff7c94, #ffb38d);
+}
+
+.trackTitle {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.1;
+}
+
+.trackArtists {
+  margin: 0;
+  color: var(--muted);
+}
+
+.albumArt {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+
+.traits {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.trait {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px;
+  font-size: 12px;
+  color: #dce7ff;
+  background: rgba(17, 27, 53, 0.62);
+}
+
+.minimalBottom {
+  padding: 10px 14px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(240px, 380px) minmax(0, 1fr);
+  align-items: center;
+}
+
+.nowPlayingMini {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.nowPlayingMini img,
+.placeholderTile {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: rgba(21, 33, 64, 0.72);
+}
+
+.nowPlayingMini div {
+  min-width: 0;
+  display: grid;
+}
+
+.nowPlayingMini strong,
+.nowPlayingMini small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nowPlayingMini small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.playerCenter {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+}
+
+.playerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  width: min(920px, 100%);
+}
+
+.roundIcon {
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.playerCenter input[type="range"] {
+  width: 100%;
+  accent-color: #d6c5ff;
+}
+
+.barRow {
+  width: min(920px, 100%);
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 56px;
+  gap: 10px;
+  align-items: center;
+}
+
+.barTime {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.playerStatsText {
+  width: min(920px, 100%);
+  text-align: center;
+}
+
+.hiddenAudio {
+  display: none;
+}
+
+@media (max-width: 1200px) {
+  .sphereStage {
+    min-height: 68vh;
+  }
+
+  .hudRight {
+    top: auto;
+    bottom: 12px;
+  }
+}
+
+@media (max-width: 920px) {
+  .futuristFrame {
+    padding: 10px;
+  }
+
+  .minimalTop {
+    display: grid;
+    gap: 10px;
+  }
+
+  .controlRow {
+    justify-content: flex-start;
+  }
+
+  .sphereStage {
+    min-height: 64vh;
+  }
+
+  .hudBlock {
+    position: static;
+    width: 100%;
+    margin: 10px;
+  }
+
+  .minimalBottom {
+    grid-template-columns: 1fr;
+  }
+}
