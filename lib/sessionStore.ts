@@ -9,7 +9,9 @@ type SessionData = {
   syncProgress?: SyncProgress;
 };
 
-const SESSIONS_DIR = path.join(process.cwd(), ".cache", "sessions");
+const SESSIONS_DIR = process.env.VERCEL
+  ? path.join("/tmp", "music-sphere-sessions")
+  : path.join(process.cwd(), ".cache", "sessions");
 
 function sessionFilePath(sessionId: string): string {
   return path.join(SESSIONS_DIR, `${sessionId}.json`);
