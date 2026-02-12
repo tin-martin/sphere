@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MusicSphereCanvas from "@/components/MusicSphereCanvas";
 import { SpherePayload, SphereTrack, SpotifyProfile, SyncProgress } from "@/lib/types";
 
@@ -19,7 +19,7 @@ declare global {
 }
 
 type SpotifyPlayer = {
-  addListener: (event: string, cb: (state: any) => void) => void;
+  addListener: (event: string, cb: (state: unknown) => void) => void;
   connect: () => Promise<boolean>;
   disconnect: () => void;
   togglePlay?: () => Promise<void>;
@@ -67,6 +67,14 @@ async function readResponsePayload(response: Response): Promise<Record<string, u
   }
 }
 
+function readStringField(state: unknown, field: string): string | undefined {
+  if (!state || typeof state !== "object") {
+    return undefined;
+  }
+  const value = (state as Record<string, unknown>)[field];
+  return typeof value === "string" ? value : undefined;
+}
+
 export default function HomePage() {
   const [sphere, setSphere] = useState<SpherePayload | null>(null);
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
@@ -93,7 +101,7 @@ export default function HomePage() {
   const [playerDeviceId, setPlayerDeviceId] = useState<string | null>(null);
   const [fullPlaybackError, setFullPlaybackError] = useState<string | null>(null);
   const [autoPlayEnabled, setAutoPlayEnabled] = useState(true);
-  const [transitionMs, setTransitionMs] = useState(700);
+  const transitionMs = 700;
   const [syncCooldownUntil, setSyncCooldownUntil] = useState(0);
   const [cooldownNow, setCooldownNow] = useState(Date.now());
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -194,9 +202,10 @@ export default function HomePage() {
         volume: 0.8
       });
 
-      player.addListener("ready", ({ device_id }) => {
-        if (!cancelled && device_id) {
-          setPlayerDeviceId(device_id);
+      player.addListener("ready", (state) => {
+        const deviceId = readStringField(state, "device_id");
+        if (!cancelled && deviceId) {
+          setPlayerDeviceId(deviceId);
           setSdkReady(true);
           setFullPlaybackError(null);
         }
@@ -206,17 +215,20 @@ export default function HomePage() {
           setSdkReady(false);
         }
       });
-      player.addListener("account_error", ({ message }) => {
+      player.addListener("account_error", (state) => {
+        const message = readStringField(state, "message");
         if (!cancelled) {
           setFullPlaybackError(message ?? "Spotify account error. Premium may be required for browser playback.");
         }
       });
-      player.addListener("authentication_error", ({ message }) => {
+      player.addListener("authentication_error", (state) => {
+        const message = readStringField(state, "message");
         if (!cancelled) {
           setFullPlaybackError(message ?? "Spotify authentication error. Reconnect Spotify.");
         }
       });
-      player.addListener("initialization_error", ({ message }) => {
+      player.addListener("initialization_error", (state) => {
+        const message = readStringField(state, "message");
         if (!cancelled) {
           setFullPlaybackError(message ?? "Spotify SDK initialization failed.");
         }
@@ -404,7 +416,7 @@ export default function HomePage() {
     setPreviewCurrentTime(nextTime);
   }
 
-  async function playFullTrackInBrowser(trackOverride?: SphereTrack | null): Promise<void> {
+  const playFullTrackInBrowser = useCallback(async (trackOverride?: SphereTrack | null): Promise<void> => {
     const targetTrack = trackOverride ?? track;
     setFullPlaybackError(null);
     if (!targetTrack?.uri) {
@@ -434,7 +446,7 @@ export default function HomePage() {
     setPlayMode("spotify");
     setIsPlaying(true);
     setStatus(`Playing in browser: ${targetTrack.name}`);
-  }
+  }, [playerDeviceId, track]);
 
   async function toggleMainPlayback(): Promise<void> {
     setError(null);
@@ -494,7 +506,7 @@ export default function HomePage() {
         autoPlayTimerRef.current = null;
       }
     };
-  }, [autoPlayEnabled, sdkReady, playerDeviceId, track?.id, track?.uri, transitionMs]);
+  }, [autoPlayEnabled, sdkReady, playerDeviceId, track, track?.id, track?.uri, transitionMs, playFullTrackInBrowser]);
 
   const progressPct = Math.max(0, Math.min(100, syncProgress.percent));
   const cooldownRemainingMs = Math.max(0, syncCooldownUntil - cooldownNow);

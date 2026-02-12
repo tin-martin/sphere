@@ -1,5 +1,5 @@
 import { RawTrack } from "@/lib/spotify";
-import { SemanticAxes, SpherePayload, SphereTrack, TrackAudioFeatures } from "@/lib/types";
+import { SpherePayload, SphereTrack, TrackAudioFeatures } from "@/lib/types";
 
 const FEATURE_KEYS = [
   "energy",
@@ -11,78 +11,6 @@ const FEATURE_KEYS = [
   "speechiness",
   "liveness"
 ] as const;
-
-type FeatureKey = (typeof FEATURE_KEYS)[number];
-
-function dot(a: number[], b: number[]): number {
-  return a.reduce((sum, value, index) => sum + value * b[index], 0);
-}
-
-function magnitude(vector: number[]): number {
-  return Math.sqrt(dot(vector, vector));
-}
-
-function normalize(vector: number[]): number[] {
-  const mag = magnitude(vector);
-  if (mag === 0) {
-    return vector.map(() => 0);
-  }
-  return vector.map((value) => value / mag);
-}
-
-function transpose(matrix: number[][]): number[][] {
-  if (!matrix.length) {
-    return [];
-  }
-  return matrix[0].map((_, colIndex) => matrix.map((row) => row[colIndex]));
-}
-
-function multiplyMatrixVector(matrix: number[][], vector: number[]): number[] {
-  return matrix.map((row) => dot(row, vector));
-}
-
-function covarianceMatrix(matrix: number[][]): number[][] {
-  const rows = matrix.length;
-  const cols = matrix[0]?.length ?? 0;
-  const cov = Array.from({ length: cols }, () => Array.from({ length: cols }, () => 0));
-
-  for (let i = 0; i < cols; i += 1) {
-    for (let j = i; j < cols; j += 1) {
-      let sum = 0;
-      for (let r = 0; r < rows; r += 1) {
-        sum += matrix[r][i] * matrix[r][j];
-      }
-      const value = rows > 1 ? sum / (rows - 1) : 0;
-      cov[i][j] = value;
-      cov[j][i] = value;
-    }
-  }
-
-  return cov;
-}
-
-function powerIteration(matrix: number[][], iterations = 60): number[] {
-  const size = matrix.length;
-  let vector = normalize(Array.from({ length: size }, () => Math.random() + 1e-4));
-
-  for (let i = 0; i < iterations; i += 1) {
-    const next = multiplyMatrixVector(matrix, vector);
-    vector = normalize(next);
-  }
-
-  return vector;
-}
-
-function deflate(matrix: number[][], eigenvector: number[], eigenvalue: number): number[][] {
-  return matrix.map((row, i) =>
-    row.map((value, j) => value - eigenvalue * eigenvector[i] * eigenvector[j])
-  );
-}
-
-function project(matrix: number[][], components: number[][]): number[][] {
-  const componentsT = transpose(components);
-  return matrix.map((row) => componentsT.map((component) => dot(row, component)));
-}
 
 function percentile(sorted: number[], p: number): number {
   if (sorted.length === 0) {
@@ -118,58 +46,6 @@ function buildFeatureMatrix(features: TrackAudioFeatures[]): number[][] {
   return features.map((_, rowIndex) => columns.map((column) => column[rowIndex]));
 }
 
-function runPca3(matrix: number[][]): number[][] {
-  const cov = covarianceMatrix(matrix);
-  const components: number[][] = [];
-  let working = cov;
-
-  for (let i = 0; i < 3; i += 1) {
-    const eigenvector = powerIteration(working);
-    const eigenvalue = dot(eigenvector, multiplyMatrixVector(working, eigenvector));
-    components.push(eigenvector);
-    working = deflate(working, eigenvector, eigenvalue);
-  }
-
-  return project(matrix, components);
-}
-
-function vectorToTuple3(vector: number[]): [number, number, number] {
-  return [vector[0] ?? 0, vector[1] ?? 0, vector[2] ?? 0];
-}
-
-function featureCorrelations(positions: number[][], values: number[]): [number, number, number] {
-  const cols = [0, 1, 2].map((index) => positions.map((p) => p[index] ?? 0));
-  const meanV = values.reduce((sum, v) => sum + v, 0) / Math.max(values.length, 1);
-
-  const correlations = cols.map((col) => {
-    const meanC = col.reduce((sum, v) => sum + v, 0) / Math.max(col.length, 1);
-    let numerator = 0;
-    let denomC = 0;
-    let denomV = 0;
-
-    for (let i = 0; i < col.length; i += 1) {
-      const dc = col[i] - meanC;
-      const dv = values[i] - meanV;
-      numerator += dc * dv;
-      denomC += dc * dc;
-      denomV += dv * dv;
-    }
-
-    const denom = Math.sqrt(denomC * denomV);
-    return denom === 0 ? 0 : numerator / denom;
-  });
-
-  return vectorToTuple3(normalize(correlations));
-}
-
-function computeSemanticAxes(positions: number[][], features: TrackAudioFeatures[]): SemanticAxes {
-  return {
-    energy: featureCorrelations(positions, features.map((f) => f.energy)),
-    tempo: featureCorrelations(positions, features.map((f) => f.tempo)),
-    valence: featureCorrelations(positions, features.map((f) => f.valence)),
-    acousticness: featureCorrelations(positions, features.map((f) => f.acousticness))
-  };
-}
 
 function simplePositionFromEnergyValence(features: TrackAudioFeatures): [number, number, number] {
   let x = (features.valence * 2 - 1) * 0.92;
@@ -225,55 +101,6 @@ function fallbackFeaturesFromTrack(track: RawTrack): TrackAudioFeatures {
     tempo: 70 + seededUnit(base + 191) * 110,
     time_signature: 4
   };
-}
-
-function fibonacciSpherePoint(index: number, total: number): [number, number, number] {
-  const n = Math.max(total, 1);
-  const i = index + 0.5;
-  const phi = Math.acos(1 - (2 * i) / n);
-  const theta = Math.PI * (1 + Math.sqrt(5)) * i;
-  const x = Math.cos(theta) * Math.sin(phi);
-  const y = Math.sin(theta) * Math.sin(phi);
-  const z = Math.cos(phi);
-  return [x, y, z];
-}
-
-function ensureVisiblePositions(rawPositions: number[][]): [number, number, number][] {
-  let zeroCount = 0;
-  for (const pos of rawPositions) {
-    if (magnitude(pos) < 1e-6) {
-      zeroCount += 1;
-    }
-  }
-
-  const mostlyCollapsed = zeroCount > rawPositions.length * 0.3;
-  if (mostlyCollapsed) {
-    return rawPositions.map((_, index) => fibonacciSpherePoint(index, rawPositions.length));
-  }
-
-  const normalized = rawPositions.map((pos, index) => {
-    if (magnitude(pos) < 1e-6) {
-      return fibonacciSpherePoint(index, rawPositions.length);
-    }
-    return vectorToTuple3(normalize(pos));
-  });
-
-  const centroid: [number, number, number] = normalized.reduce(
-    (acc, p) => [acc[0] + p[0], acc[1] + p[1], acc[2] + p[2]],
-    [0, 0, 0]
-  ).map((v) => v / Math.max(normalized.length, 1)) as [number, number, number];
-  const avgDist = normalized.reduce((sum, p) => {
-    const dx = p[0] - centroid[0];
-    const dy = p[1] - centroid[1];
-    const dz = p[2] - centroid[2];
-    return sum + Math.sqrt(dx * dx + dy * dy + dz * dz);
-  }, 0) / Math.max(normalized.length, 1);
-
-  if (avgDist < 0.22) {
-    return normalized.map((_, index) => fibonacciSpherePoint(index, normalized.length));
-  }
-
-  return normalized;
 }
 
 export function createSpherePayload(rawTracks: RawTrack[], featureMap: Map<string, TrackAudioFeatures>): SpherePayload {
